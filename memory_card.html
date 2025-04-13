@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Cards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', Arial, sans-serif;
+            background: #0f0c29;
+            padding: 20px;
+            overflow: hidden; /* Prevent scrolling on entire page */
+        }
+
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: pulseBg 10s infinite alternate;
+        }
+
+        @keyframes pulseBg {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .bg-particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="5" cy="5" r="2" fill="rgba(255,255,255,0.3)"/%3E%3C/svg%3E');
+            background-size: 20px 20px;
+            animation: floatParticles 15s linear infinite;
+        }
+
+        @keyframes floatParticles {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50px, -50px); }
+        }
+
+        #start-screen, #game-screen {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            overflow: hidden; /* Prevent internal scrolling */
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .size-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            color: white;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.4s;
+            box-shadow: 0 5px 15px rgba(0, 114, 255, 0.4);
+        }
+
+        .size-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 114, 255, 0.6);
+        }
+
+        #game-board {
+            display: grid;
+            gap: 10px;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 500px;
+            background: linear-gradient(135deg, #ecf0f1, #dfe4ea);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .card {
+            background-color: #2c3e50;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease, box-shadow 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            aspect-ratio: 1 / 1;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+        }
+
+        .card-front {
+            transform: rotateY(180deg);
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        #score, #timer {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .game-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .game-btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #restart {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        #quit {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #win-screen {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ff6b6b, #ffeaa7);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            z-index: 3;
+        }
+
+        #win-screen h1 {
+            color: #fff;
+            font-size: 2em;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #final-score, #final-time {
+            font-size: 1.2em;
+            color: #fff;
+            margin: 10px 0;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .win-button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 1em;
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #win-restart {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+
+        #win-menu {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+        }
+
+        .win-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            #start-screen, #game-screen {
+                max-width: 500px;
+            }
+
+            #game-board {
+                max-width: 450px;
+            }
+
+            #win-screen {
+                width: 90%;
+                max-width: 400px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+                height: 100vh; /* Ensure full height usage */
+            }
+
+            #start-screen, #game-screen {
+                max-width: 100%; /* Use full width */
+                width: 100%;
+                padding: 10px;
+                margin: 0;
+                height: auto;
+                max-height: 100vh; /* Fit within viewport */
+            }
+
+            #game-board {
+                max-width: 100%; /* Use full width */
+                width: 100%;
+                margin: 10px auto;
+                padding: 10px;
+                gap: 5px; /* Reduce gap for more space */
+            }
+
+            /* Specific adjustments for 4x4 and 5x5 grids */
+            #game-board.grid-4x4 .card,
+            #game-board.grid-5x5 .card {
+                min-width: 0; /* Override any min-width */
+                min-height: 0; /* Override any min-height */
+            }
+
+            h1 {
+                font-size: 1.5em; /* Reduce header size */
+            }
+
+            #score, #timer {
+                font-size: 1em; /* Reduce text size */
+            }
+
+            .game-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .game-btn {
+                padding: 8px 15px;
+            }
+
+            #win-screen {
+                width: 90%;
+                max-width: 300px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="bg-particles"></div>
+    
+    <div id="start-screen">
+        <h1>Memory Cards</h1>
+        <button class="size-button" data-size="2">2x2 (Easy)</button>
+        <button class="size-button" data-size="4">4x4 (Medium)</button>
+        <button class="size-button" data-size="5">5x5 (Hard)</button>
+    </div>
+
+    <div id="game-screen" style="display: none;">
+        <h1>Memory Cards</h1>
+        <div id="score">Matches: 0 / 0</div>
+        <div id="timer">Time: 00:00</div>
+        <div id="game-board"></div>
+        <div class="game-buttons">
+            <button id="restart" class="game-btn">Restart</button>
+            <button id="quit" class="game-btn">Quit to Menu</button>
+        </div>
+    </div>
+
+    <div id="win-screen">
+        <h1>Congratulations!</h1>
+        <div id="final-score">Final Score: 0</div>
+        <div id="final-time">Time: 00:00</div>
+        <button id="win-restart" class="win-button">Play Again</button>
+        <button id="win-menu" class="win-button">Main Menu</button>
+    </div>
+
+    <script>
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const winScreen = document.getElementById('win-screen');
+        const gameBoard = document.getElementById('game-board');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const finalScore = document.getElementById('final-score');
+        const finalTime = document.getElementById('final-time');
+        const restartButton = document.getElementById('restart');
+        const quitButton = document.getElementById('quit');
+        const sizeButtons = document.querySelectorAll('.size-button');
+        const winRestart = document.getElementById('win-restart');
+        const winMenu = document.getElementById('win-menu');
+
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let totalPairs = 0;
+        let gridSize = 0;
+        let timer = 0;
+        let timerInterval = null;
+
+        const cardImages = [
+            'https://deckofcardsapi.com/static/img/AH.png',
+            'https://deckofcardsapi.com/static/img/2H.png',
+            'https://deckofcardsapi.com/static/img/3H.png',
+            'https://deckofcardsapi.com/static/img/4H.png',
+            'https://deckofcardsapi.com/static/img/5H.png',
+            'https://deckofcardsapi.com/static/img/6H.png',
+            'https://deckofcardsapi.com/static/img/7H.png',
+            'https://deckofcardsapi.com/static/img/8H.png',
+            'https://deckofcardsapi.com/static/img/9H.png',
+            'https://deckofcardsapi.com/static/img/0H.png',
+            'https://deckofcardsapi.com/static/img/JH.png',
+            'https://deckofcardsapi.com/static/img/QH.png',
+            'https://deckofcardsapi.com/static/img/KH.png'
+        ];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function setBoardSize(size) {
+            gridSize = parseInt(size);
+            totalPairs = Math.floor((gridSize * gridSize) / 2);
+            gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gameBoard.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+            // Add class for mobile-specific styling
+            gameBoard.className = `grid-${gridSize}x${gridSize}`;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timer = 0;
+            timerInterval = setInterval(() => {
+                timer++;
+                const minutes = Math.floor(timer / 60).toString().padStart(2, '0');
+                const seconds = (timer % 60).toString().padStart(2, '0');
+                timerDisplay.textContent = `Time: ${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function createBoard() {
+            gameBoard.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            scoreDisplay.textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+            startTimer();
+            
+            const selectedImages = shuffle([...cardImages]).slice(0, totalPairs);
+            const cardValues = shuffle([...selectedImages, ...selectedImages]);
+            
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                
+                const backFace = document.createElement('div');
+                backFace.classList.add('card-face', 'card-back');
+                
+                const frontFace = document.createElement('div');
+                frontFace.classList.add('card-face', 'card-front');
+                
+                if (i < cardValues.length) {
+                    frontFace.style.backgroundImage = `url(${cardValues[i]})`;
+                    card.addEventListener('click', flipCard);
+                }
+                
+                card.appendChild(backFace);
+                card.appendChild(frontFace);
+                gameBoard.appendChild(card);
+            }
+        }
+
+        function flipCard(e) {
+            const card = e.target.closest('.card');
+            if (!card || card.classList.contains('flipped') || flippedCards.length >= 2) return;
+            
+            card.classList.add('flipped');
+            flippedCards.push(card);
+            
+            if (flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            const image1 = card1.querySelector('.card-front').style.backgroundImage;
+            const image2 = card2.querySelector('.card-front').style.backgroundImage;
+            
+            if (image1 === image2) {
+                matchedPairs++;
+                scoreDisplay.textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+                flippedCards = [];
+                
+                if (matchedPairs === totalPairs) {
+                    setTimeout(showWinScreen, 800);
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        function showStartScreen() {
+            startScreen.style.display = 'block';
+            gameScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            stopTimer();
+        }
+
+        function showWinScreen() {
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'none';
+            winScreen.style.display = 'block';
+            stopTimer();
+            finalScore.textContent = `Final Score: ${matchedPairs}`;
+            finalTime.textContent = timerDisplay.textContent;
+        }
+
+        function startGame(size) {
+            setBoardSize(size);
+            createBoard();
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            winScreen.style.display = 'none';
+        }
+
+        sizeButtons.forEach(button => {
+            button.addEventListener('click', () => startGame(button.dataset.size));
+        });
+
+        restartButton.addEventListener('click', () => startGame(gridSize));
+        quitButton.addEventListener('click', showStartScreen);
+        winRestart.addEventListener('click', () => startGame(gridSize));
+        winMenu.addEventListener('click', showStartScreen);
+
+        showStartScreen();
+    </script>
+</body>
+</html>
